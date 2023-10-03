@@ -32,15 +32,26 @@ func (r *Result[T]) ExpectErr(msg string) error {
 	}
 	panic(msg)
 }
-func (r *Result[T]) Error() error {
-	return r.err
+
+func (r *Result[T]) Error() string {
+	return r.err.Error()
 }
+
 func (r *Result[T]) IsOk() bool {
 	return r.err == nil
 }
+
 func (r *Result[T]) IsErr() bool {
 	return r.err != nil
 }
+
+func (r *Result[T]) MapErr(op func(err error) error) *Result[T] {
+	if r.IsOk() {
+		return r
+	}
+	return Err[T](op(r))
+}
+
 func Ok[T any](value T) *Result[T] {
 	return &Result[T]{
 		value: value,
