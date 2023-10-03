@@ -52,6 +52,20 @@ func (r *Result[T]) ExpectErr(msg string) error {
 	panic(msg)
 }
 
+func (r *Result[T]) Inspect(f func(value T)) *Result[T] {
+	if r.IsOk() {
+		f(r.value)
+	}
+	return r
+}
+
+func (r *Result[T]) InspectErr(f func(err error)) *Result[T] {
+	if r.IsErr() {
+		f(r.err)
+	}
+	return r
+}
+
 func (r *Result[T]) Err() *Option[error] {
 	if r.IsOk() {
 		return None[error]()
@@ -118,4 +132,11 @@ func Err[T any](err error) *Result[T] {
 	return &Result[T]{
 		err: failure.Wrap(err),
 	}
+}
+
+func AsResult[T any](value T, err error) *Result[T] {
+	if err != nil {
+		return Err[T](err)
+	}
+	return Ok[T](value)
 }
