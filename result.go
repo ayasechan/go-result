@@ -1,6 +1,8 @@
 package result
 
-import "github.com/morikuni/failure"
+import (
+	"github.com/morikuni/failure"
+)
 
 type Result[T any] struct {
 	value T
@@ -8,10 +10,17 @@ type Result[T any] struct {
 }
 
 func (r *Result[T]) Unwrap() T {
-	if r.err != nil {
+	if r.IsErr() {
 		panic(r.err)
 	}
 	return r.value
+}
+
+func (r *Result[T]) UnwrapErr() error {
+	if r.IsOk() {
+		panic("called `called `Result.UnwrapErr()` on an `Ok` value")
+	}
+	return r.err
 }
 
 func (r *Result[T]) UnwrapOr(value T) T {
@@ -19,6 +28,16 @@ func (r *Result[T]) UnwrapOr(value T) T {
 		return r.value
 	}
 	return value
+}
+func (r *Result[T]) UnwrapOrDefault() T {
+	// not check ok
+	return r.value
+}
+func (r *Result[T]) UnwrapOrElse(op func(err error) T) T {
+	if r.IsOk() {
+		return r.value
+	}
+	return op(r.err)
 }
 func (r *Result[T]) Expect(msg string) T {
 	if r.IsOk() {
@@ -33,23 +52,59 @@ func (r *Result[T]) ExpectErr(msg string) error {
 	panic(msg)
 }
 
-func (r *Result[T]) Error() string {
-	return r.err.Error()
+func (r *Result[T]) Err() *Option[error] {
+	if r.IsOk() {
+		return None[error]()
+	}
+	return Some[error](r.err)
+}
+func (r *Result[T]) Ok() *Option[T] {
+	if r.IsOk() {
+		return Some[T](r.value)
+	}
+	return None[T]()
+}
+
+func (r *Result[T]) Or(value *Result[T]) *Result[T] {
+	if r.IsOk() {
+		return Ok(r.value)
+	}
+	return value
+}
+func (r *Result[T]) OrElse(op func(err error) *Result[T]) *Result[T] {
+	if r.IsOk() {
+		return Ok(r.value)
+	}
+	return op(r.err)
+}
+func (r *Result[T]) Cloned() *Result[T] {
+	return &Result[T]{value: r.value, err: r.err}
 }
 
 func (r *Result[T]) IsOk() bool {
 	return r.err == nil
 }
-
+func (r *Result[T]) IsOkAnd(f func(value T) bool) bool {
+	if r.IsErr() {
+		return false
+	}
+	return f(r.value)
+}
 func (r *Result[T]) IsErr() bool {
 	return r.err != nil
 }
 
+func (r *Result[T]) IsErrAnd(f func(err error) bool) bool {
+	if r.IsOk() {
+		return false
+	}
+	return f(r.err)
+}
 func (r *Result[T]) MapErr(op func(err error) error) *Result[T] {
 	if r.IsOk() {
-		return r
+		return Ok(r.value)
 	}
-	return Err[T](op(r))
+	return Err[T](op(r.err))
 }
 
 func Ok[T any](value T) *Result[T] {
