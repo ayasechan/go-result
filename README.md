@@ -4,7 +4,13 @@
 
 Result and Option for golang
 
-# example
+# Install
+
+```
+go get github.com/ayasechan/go-result
+```
+
+# Example
 
 ```golang
 func ExampleResult_downloadFile() {
