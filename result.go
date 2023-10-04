@@ -23,28 +23,40 @@ func (r *Result[T]) UnwrapErr() error {
 	return r.err
 }
 
+func (r *Result[T]) UnwrapErrUnchecked() error {
+	return r.err
+}
+
 func (r *Result[T]) UnwrapOr(value T) T {
 	if r.IsOk() {
 		return r.value
 	}
 	return value
 }
+
 func (r *Result[T]) UnwrapOrDefault() T {
 	// not check ok
 	return r.value
 }
+
 func (r *Result[T]) UnwrapOrElse(op func(err error) T) T {
 	if r.IsOk() {
 		return r.value
 	}
 	return op(r.err)
 }
+
+func (r *Result[T]) UnwrapUnchecked() T {
+	return r.value
+}
+
 func (r *Result[T]) Expect(msg string) T {
 	if r.IsOk() {
 		return r.value
 	}
 	panic(msg)
 }
+
 func (r *Result[T]) ExpectErr(msg string) error {
 	if r.IsErr() {
 		return r.err
