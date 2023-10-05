@@ -9,20 +9,14 @@ import (
 
 func ExampleResult_downloadFile() {
 	download := func(url string, dst io.Writer) (ret *Result[struct{}]) {
-		// You might want to wrap this part as a function
-		defer func() {
-			err := recover()
-			if err != nil {
-				ret = Err[struct{}](err.(error))
-			}
-		}()
+		return withRecover(func() *Result[struct{}] {
+			req := AsResult(http.NewRequest(http.MethodGet, url, nil)).Unwrap()
+			resp := AsResult(http.DefaultClient.Do(req)).Unwrap()
+			defer resp.Body.Close()
 
-		req := AsResult(http.NewRequest(http.MethodGet, url, nil)).Unwrap()
-		resp := AsResult(http.DefaultClient.Do(req)).Unwrap()
-		defer resp.Body.Close()
-
-		AsResult(io.Copy(dst, resp.Body)).Unwrap()
-		return Ok(struct{}{})
+			AsResult(io.Copy(dst, resp.Body)).Unwrap()
+			return Ok(struct{}{})
+		})
 	}
 
 	dstFd := AsResult(os.CreateTemp("", ".temp")).Unwrap()
@@ -33,4 +27,15 @@ func ExampleResult_downloadFile() {
 		fmt.Printf("%+v", err)
 		os.Exit(1)
 	})
+}
+
+func withRecover[T any](fn func() *Result[T]) (ret *Result[T]) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			ret = Err[T](err.(error))
+		}
+	}()
+	ret = fn()
+	return
 }
