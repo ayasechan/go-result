@@ -14,8 +14,8 @@ go get github.com/ayasechan/go-result
 
 ```golang
 func ExampleResult_downloadFile() {
-	download := func(url string, dst io.Writer) (ret *Result[struct{}]) {
-		return withRecover(func() *Result[struct{}] {
+	download := func(url string, dst io.Writer) Result[struct{}] {
+		return WithRecover(func() Result[struct{}] {
 			req := AsResult(http.NewRequest(http.MethodGet, url, nil)).Unwrap()
 			resp := AsResult(http.DefaultClient.Do(req)).Unwrap()
 			defer resp.Body.Close()
